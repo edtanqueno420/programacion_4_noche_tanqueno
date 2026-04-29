@@ -1,97 +1,129 @@
 package com.ute.tts
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import android.widget.Button
-import android.widget.TextView
+import android.widget.MediaController
+import android.widget.VideoView
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.appbar.MaterialToolbar
+import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var tvDisplay: TextView
-    private var current = "0"
-    private var last: String? = null
-    private var op: Char? = null
+    private lateinit var webView: WebView
+    private lateinit var videoView: VideoView
+
+    private val youtubeWatchUrl = "https://www.youtube.com/watch?v=6BODDyZRF6A"
+    private val youtubeEmbedUrl = "https://www.youtube.com/embed/kXYiU_JCYtU?playsinline=1&rel=0"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_calculator)
+        setContentView(R.layout.activity_multimedia)
 
-        findViewById<MaterialToolbar>(R.id.toolbar)?.setNavigationOnClickListener { finish() }
-        tvDisplay = findViewById(R.id.tvDisplay)
-
-        val btn0 = findViewById<Button>(R.id.btn0)
-        val btn1 = findViewById<Button>(R.id.btn1)
-        val btn2 = findViewById<Button>(R.id.btn2)
-        val btn3 = findViewById<Button>(R.id.btn3)
-        val btn4 = findViewById<Button>(R.id.btn4)
-        val btn5 = findViewById<Button>(R.id.btn5)
-        val btn6 = findViewById<Button>(R.id.btn6)
-        val btn7 = findViewById<Button>(R.id.btn7)
-        val btn8 = findViewById<Button>(R.id.btn8)
-        val btn9 = findViewById<Button>(R.id.btn9)
-
-        listOf<Button>(btn0,btn1,btn2,btn3,btn4,btn5,btn6,btn7,btn8,btn9).forEach { b ->
-            b.setOnClickListener { inputDigit(b.text.toString()) }
+        val mainLayout = findViewById<android.view.View>(R.id.main)
+        ViewCompat.setOnApplyWindowInsetsListener(mainLayout) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
         }
 
-        findViewById<Button>(R.id.btnDot).setOnClickListener { inputDot() }
-        findViewById<Button>(R.id.btnAdd).setOnClickListener { handleOp('+') }
-        findViewById<Button>(R.id.btnSub).setOnClickListener { handleOp('-') }
-        findViewById<Button>(R.id.btnMul).setOnClickListener { handleOp('*') }
-        findViewById<Button>(R.id.btnDiv).setOnClickListener { handleOp('/') }
-        findViewById<Button>(R.id.btnEq).setOnClickListener  { handleOp('=') }
-        findViewById<Button>(R.id.btnAC).setOnClickListener   { reset() }
-        findViewById<Button>(R.id.btnBack).setOnClickListener { backspace() }
+        // Configuración de WebView para YouTube
+        webView = findViewById(R.id.webViewYouTube)
+        val ws: WebSettings = webView.settings
+        ws.javaScriptEnabled = true
+        ws.domStorageEnabled = true
+        ws.mediaPlaybackRequiresUserGesture = false
+        ws.loadWithOverviewMode = true
+        ws.useWideViewPort = true
 
-        updateDisplay()
-    }
+        webView.webChromeClient = WebChromeClient()
+        webView.webViewClient = WebViewClient()
 
-    private fun inputDigit(d: String) {
-        current = if (current == "0") d else current + d
-        updateDisplay()
-    }
+        val html = """
+           <!DOCTYPE html>
+           <html>
+           <head>
+               <meta name="viewport" content="width=device-width, initial-scale=1.0">
+               <style>
+                   html, body {
+                       margin: 0;
+                       height: 100%;
+                       background: #000;
+                   }
+                   iframe {
+                       width: 100%;
+                       height: 100%;
+                       border: 0;
+                   }
+               </style>
+           </head>
+           <body>
+               <iframe
+                   src="$youtubeEmbedUrl"
+                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                   allowfullscreen>
+               </iframe>
+           </body>
+           </html>
+       """.trimIndent()
 
-    private fun inputDot() {
-        if (!current.contains(".")) {
-            current += if (current.isEmpty()) "0." else "."
-            updateDisplay()
+        webView.loadDataWithBaseURL(
+            "https://www.youtube.com",
+            html,
+            "text/html",
+            "UTF-8",
+            null
+        )
+
+        // Botón para abrir en la app de YouTube
+        findViewById<Button>(R.id.btnOpenYouTube).setOnClickListener {
+            val intent = Intent(Intent.ACTION_VIEW, youtubeWatchUrl.toUri())
+            startActivity(intent)
         }
-    }
 
-    private fun handleOp(nextOp: Char) {
-        if (op != null && last != null) {
-            val a = last!!.toDoubleOrNull() ?: 0.0
-            val b = current.toDoubleOrNull() ?: 0.0
-            val r = when (op) {
-                '+' -> a + b
-                '-' -> a - b
-                '*' -> a * b
-                '/' -> if (b == 0.0) Double.NaN else a / b
-                else -> b
+        // Configuración de VideoView para MP4 local
+        videoView = findViewById(R.id.videoViewMp4)
+        val mediaController = MediaController(this)
+        mediaController.setAnchorView(videoView)
+        videoView.setMediaController(mediaController)
+
+        // Nota: Asegúrate de que el archivo 'demo.mp4' exista en 'res/raw/'
+        // Si no existe, esta parte fallará en tiempo de compilación o ejecución.
+        try {
+            // Intentamos obtener el ID del recurso dinámicamente para evitar errores de compilación si no existe aún
+            val resId = resources.getIdentifier("demo", "raw", packageName)
+            if (resId != 0) {
+                val videoUri: Uri = Uri.parse("android.resource://$packageName/$resId")
+                videoView.setVideoURI(videoUri)
+                videoView.setOnPreparedListener { mp ->
+                    mp.isLooping = false
+                    videoView.start()
+                }
             }
-            last = if (r.isNaN()) "Error" else trim(r)
-            current = "0"
-            updateDisplay(last)
-        } else {
-            last = current
-            current = "0"
-            updateDisplay(last)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        op = if (nextOp == '=') null else nextOp
-    }
 
-    private fun reset() { current = "0"; last = null; op = null; updateDisplay() }
-    private fun backspace() { current = if (current.length > 1) current.dropLast(1) else "0"; updateDisplay() }
-
-    private fun trim(value: Double): String {
-        val s = String.format("%.6f", value).trimEnd('0').trimEnd('.')
-        return if (s.length > 12) s.take(12) else s
-    }
-
-    private fun updateDisplay(override: String? = null) {
-        tvDisplay.text = (override ?: current)
+        // Manejo del botón Atrás (sustituye a onBackPressed deprecado)
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (this@MainActivity::webView.isInitialized && webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
     }
 }

@@ -7,6 +7,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import com.ute.compose.screens.*
 import com.ute.compose.material.*
+import com.ute.compose.ui.viewmodel.Paso01_ViewModelScreen
+import com.ute.compose.ui.viewmodel.Paso02_UiStateScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -26,11 +28,20 @@ class MainActivity : ComponentActivity() {
                 // Componentes Material 3: TextField, Card, LazyColumn, Scaffold y diálogos
                 // ◀ CAMBIA AQUÍ para probar cada paso:
                 // Paso01TextFieldScreen()
-                Paso02_CardScreen()
+                //Paso02_CardScreen()
                 // Paso03_LazyColumnScreen()
                 // Paso04_ScaffoldScreen()
                 // Paso05_NavBarScreen()
-                // Paso06_DialogosScreen()   // ← paso activo
+                //Paso06_DialogosScreen()   // ← paso activo
+
+                //MaterialTheme
+                // ◀ CAMBIA AQUÍ para probar cada paso:
+                //Paso01_ViewModelScreen()
+                Paso02_UiStateScreen()
+                // Paso03_NavigationScreen()
+                // Paso04_DetalleScreen()  ← solo para preview, la nav lo llama
+                // Paso05_RetrofitScreen()
+                // Paso06_CompletoScreen()   // ← paso activo
             }
         }
     }

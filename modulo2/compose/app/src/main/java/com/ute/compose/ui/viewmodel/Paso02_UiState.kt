@@ -13,11 +13,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.ute.compose.viewmodel.ProductosViewModel
+import com.ute.compose.viewmodel.ProductosUiStateViewModel
 import com.ute.compose.viewmodel.UiState
 
 @Composable
-fun Paso02_UiStateScreen(vm: ProductosViewModel = viewModel()) {
+fun Paso02_UiStateScreen(vm: ProductosUiStateViewModel = viewModel()) {
     val uiState  by vm.uiState.collectAsStateWithLifecycle()
     val busqueda by vm.busqueda.collectAsStateWithLifecycle()
 
@@ -117,10 +117,11 @@ fun Paso02_UiStateScreen(vm: ProductosViewModel = viewModel()) {
             }
 
             // ── Success ────────────────────────────────────────────────────
-            is UiState.Success -> {
-                // estado.data está disponible aquí como List<Producto>
+            is UiState.Success<*> -> {
+                // estado.data está disponible aquí
+                val productos = (estado as UiState.Success<List<com.ute.compose.model.Producto>>).data
                 Text(
-                    "${estado.data.size} producto(s)",
+                    "${productos.size} producto(s)",
                     style    = MaterialTheme.typography.labelSmall,
                     color    = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -129,8 +130,14 @@ fun Paso02_UiStateScreen(vm: ProductosViewModel = viewModel()) {
                     contentPadding      = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(estado.data, key = { it.id }) { producto ->
-                        TarjetaProductoSimple(producto = producto)
+                    items(productos, key = { it.id }) { producto ->
+                        // Si no tienes TarjetaProductoSimple, usamos una básica para que no de error
+                        Card(Modifier.fillMaxWidth()) {
+                            ListItem(
+                                headlineContent = { Text(producto.nombre) },
+                                supportingContent = { Text(producto.categoria) }
+                            )
+                        }
                     }
                 }
             }

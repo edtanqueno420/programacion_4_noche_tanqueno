@@ -36,8 +36,9 @@ class MainActivity : ComponentActivity() {
 
                 //MaterialTheme
                 // ◀ CAMBIA AQUÍ para probar cada paso:
+                Paso01SumaScreen()
                 //Paso01_ViewModelScreen()
-                Paso02_UiStateScreen()
+                //Paso02_UiStateScreen()
                 // Paso03_NavigationScreen()
                 // Paso04_DetalleScreen()  ← solo para preview, la nav lo llama
                 // Paso05_RetrofitScreen()

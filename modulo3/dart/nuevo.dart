@@ -311,15 +311,34 @@ Promedio de kilómetros por viaje
  
 */
 
+  int totalKm = 0;
 
+  for (int viaje = 1; viaje <= 5; viaje++) {
 
+    print("Ingrese kilómetros del viaje $viaje:");
+    int km = int.parse(stdin.readLineSync()!);
 
+    totalKm = totalKm + km;
 
+    if (km < 50) {
+      print("Ruta corta");
+    } else if (km <= 150) {
+      print("Ruta media");
+    } else {
+      print("Ruta larga");
+    }
 
+  }
 
+  double combustible = totalKm / 12;
+  double promedio = totalKm / 5;
 
+  print("Total de kilómetros: $totalKm");
+  print("Total de combustible estimado: $combustible litros");
+  print("Promedio de kilómetros por viaje: $promedio");
 
 }
+
 
 
 

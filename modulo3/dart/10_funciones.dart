@@ -33,6 +33,15 @@ void registroUsuario({required String nombre, required String apellido, required
   print('hola $nombre $apellido, tienes $edad años');
 }
 
+// Dart puede inferir el tipo de retorno, pero es buena práctica declararlo
+// explícitamente en funciones públicas para mejorar la legibilidad.
+
+// Con tipo explícito — recomendado
+String formatearPrecio(double precio) => '\$${precio.toStringAsFixed(2)}';
+
+// Sin tipo — Dart infiere que retorna String
+formatearPrecioSinTipo(double precio) => '\$${precio.toStringAsFixed(2)}';
+
 void main() {
   saludar();
   saludoConParametro('Pedro Perez');

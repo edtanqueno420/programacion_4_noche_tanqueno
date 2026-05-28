@@ -1,0 +1,47 @@
+fun main() {
+    println("Listas - Materiales")
+    println("Inmutables")
+    val materiales=listOf("Acero", "Aluminio", "Plastico", "Madera", "Vidrio")
+    println(materiales)
+    println("Size: ${materiales.size}")
+    println("Mostrar el elemento indice 0: ${materiales[0]}")
+    println("Mostrar primer elemento: ${materiales.first()}")
+    println("Mostrar ultimo elemnto: ${materiales.last()}")
+
+    println("Mostrar el elemento indice 2: ${materiales.get(2)}")
+    println("Mostrar contenido segun indice: ${materiales.indexOf("Madera")}")
+    println("Verificar existencia de un elemnto: ${materiales.contains("Caucho")}")
+    println("Verificar existencia de un elemnto: ${"Acero" in materiales}")
+
+    println("Sublista: ${materiales.subList(1,4)}")
+    println("Tomar primeros dos elementos: ${materiales.take(2)}")
+    println("Suprimir 3 primeros elemntos: ${materiales.drop(3)}")
+    println("Tomar los ultimos dos elementos: ${materiales.takeLast(2)}")
+    println(materiales)
+
+    println("Mutables")
+    val herramientas = mutableListOf("Martillo", "Llave", "Destornillador", "Sierra")
+    println(herramientas)
+    herramientas.add("Taladro")
+    herramientas.add(0, "Cinta metrica")
+    println(herramientas)
+    herramientas.remove("Sierra")
+    println(herramientas)
+    herramientas[1] = "Alicate"
+    println(herramientas)
+
+    println("Array deque")
+    val pedidos = ArrayDeque<Int>()
+    println(pedidos)
+    pedidos.addFirst(101)
+    println(pedidos)
+    pedidos.addFirst(100)
+    println(pedidos)
+    pedidos.addLast(102)
+    println(pedidos)
+    pedidos.removeFirst()
+    println(pedidos)
+    pedidos.removeLast()
+    println(pedidos)
+
+}

@@ -1,112 +1,116 @@
-// presentation/viewmodel/CatalogViewModel.kt
+// presentation/viewmodel/CartViewModel.kt — añadir checkout
 package com.shopapp.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.shopapp.domain.model.Category
 import com.shopapp.domain.model.Product
-import com.shopapp.domain.model.ProductFilters
-import com.shopapp.domain.repository.CategoryRepository
-import com.shopapp.domain.repository.ProductRepository
+import com.shopapp.domain.repository.AuthRepository
+import com.shopapp.domain.repository.OrderRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class CatalogUiState(
-    val products:         List<Product> = emptyList(),
-    val categories:       List<Category> = emptyList(),
-    val isLoading:        Boolean = false,
-    val isLoadingMore:    Boolean = false,
-    val error:            String? = null,
-    val total:            Int     = 0,
-    val hasMore:          Boolean = false,
-    val search:           String  = "",
-    val selectedCategory: Int?    = null,
-    val ordering:         String  = "",
-    val page:             Int     = 1,
+data class CartItem(
+    val product:  Product,
+    val quantity: Int,
 )
 
+sealed interface CheckoutState {
+    data object Idle                          : CheckoutState
+    data object Loading                       : CheckoutState
+    data class  Success(val orderId: Int)     : CheckoutState
+    data class  Error(val message: String)   : CheckoutState
+}
+
 @HiltViewModel
-class CatalogViewModel @Inject constructor(
-    private val productRepository:  ProductRepository,
-    private val categoryRepository: CategoryRepository,
+class CartViewModel @Inject constructor(
+    private val orderRepository: OrderRepository,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(CatalogUiState())
-    val state: StateFlow<CatalogUiState> = _state.asStateFlow()
+    private val _items         = MutableStateFlow<List<CartItem>>(emptyList())
+    val items: StateFlow<List<CartItem>> = _items.asStateFlow()
 
-    private var searchJob: Job? = null
+    val totalItems: StateFlow<Int> = _items
+        .map { it.sumOf { i -> i.quantity } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
-    init { loadCategories(); load() }
+    val subtotal: StateFlow<Double> = _items
+        .map { it.sumOf { i -> i.product.price * i.quantity } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0.0)
 
-    private fun loadCategories() {
-        viewModelScope.launch {
-            categoryRepository.getCategories().onSuccess { cats ->
-                _state.update { it.copy(categories = cats.filter { c -> c.isActive }) }
+    val totalWithTax: StateFlow<Double> = _items
+        .map { it.sumOf { i -> i.product.priceWithTax * i.quantity } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0.0)
+
+    private val _checkoutState = MutableStateFlow<CheckoutState>(CheckoutState.Idle)
+    val checkoutState: StateFlow<CheckoutState> = _checkoutState.asStateFlow()
+
+    // ── CRUD del carrito ──────────────────────────────────────
+
+    fun addItem(product: Product, quantity: Int = 1) {
+        _items.update { list ->
+            val existing = list.find { it.product.id == product.id }
+            if (existing != null) {
+                list.map {
+                    if (it.product.id == product.id)
+                        it.copy(quantity = minOf(it.quantity + quantity, product.stock))
+                    else it
+                }
+            } else {
+                list + CartItem(product, quantity)
             }
         }
     }
 
-    fun load(reset: Boolean = true) {
-        val current = _state.value
-        val page    = if (reset) 1 else current.page
-
-        if (reset) {
-            _state.update { it.copy(isLoading = true, error = null, page = 1) }
-        } else {
-            if (current.isLoadingMore || !current.hasMore) return
-            _state.update { it.copy(isLoadingMore = true) }
+    fun updateQuantity(productId: Int, quantity: Int) {
+        if (quantity <= 0) removeItem(productId)
+        else _items.update { list ->
+            list.map { if (it.product.id == productId) it.copy(quantity = quantity) else it }
         }
+    }
 
+    fun removeItem(productId: Int) {
+        _items.update { it.filter { i -> i.product.id != productId } }
+    }
+
+    fun clearCart() { _items.value = emptyList() }
+
+    fun resetCheckout() { _checkoutState.value = CheckoutState.Idle }
+
+    // ── Checkout — 3 pasos ────────────────────────────────────
+
+    fun checkout() {
+        val currentItems = _items.value
+        if (currentItems.isEmpty()) {
+            _checkoutState.value = CheckoutState.Error("El carrito está vacío")
+            return
+        }
         viewModelScope.launch {
-            val filters = ProductFilters(
-                search   = current.search.ifBlank { null },
-                category = current.selectedCategory,
-                ordering = current.ordering.ifBlank { null },
-                isActive = true,
-                page     = page,
-                pageSize = 12,
-            )
-            productRepository.getProducts(filters)
-                .onSuccess { (products, total) ->
-                    _state.update { s ->
-                        s.copy(
-                            products      = if (reset) products else s.products + products,
-                            total         = total,
-                            hasMore       = (if (reset) products else s.products + products).size < total,
-                            isLoading     = false,
-                            isLoadingMore = false,
-                            page          = page + 1,
-                            error         = null,
-                        )
-                    }
+            _checkoutState.value = CheckoutState.Loading
+
+            // 1. Crear pedido vacío
+            val order = orderRepository.createOrder().getOrElse {
+                _checkoutState.value = CheckoutState.Error(it.message ?: "Error al crear pedido")
+                return@launch
+            }
+
+            // 2. Añadir cada ítem
+            for (item in currentItems) {
+                orderRepository.addItem(order.id, item.product.id, item.quantity).getOrElse {
+                    _checkoutState.value = CheckoutState.Error("Error al añadir ${item.product.name}")
+                    return@launch
                 }
-                .onFailure { e ->
-                    _state.update { it.copy(isLoading = false, isLoadingMore = false, error = e.message) }
-                }
+            }
+
+            // 3. Confirmar
+            val confirmed = orderRepository.confirmOrder(order.id).getOrElse {
+                _checkoutState.value = CheckoutState.Error(it.message ?: "Error al confirmar")
+                return@launch
+            }
+
+            clearCart()
+            _checkoutState.value = CheckoutState.Success(confirmed.id)
         }
     }
-
-    fun setSearch(query: String) {
-        _state.update { it.copy(search = query) }
-        searchJob?.cancel()
-        searchJob = viewModelScope.launch {
-            delay(400)
-            load(reset = true)
-        }
-    }
-
-    fun setCategory(id: Int?) {
-        _state.update { it.copy(selectedCategory = id) }
-        load(reset = true)
-    }
-
-    fun setOrdering(ordering: String) {
-        _state.update { it.copy(ordering = ordering) }
-        load(reset = true)
-    }
-
-    fun loadMore() = load(reset = false)
-    fun refresh()  = load(reset = true)
 }

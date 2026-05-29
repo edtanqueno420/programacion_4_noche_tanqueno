@@ -75,6 +75,7 @@ dependencies {
     // ── Hilt DI ───────────────────────────────────────────
     implementation(libs.hilt.android)
     kapt(libs.hilt.compiler)
+    kapt(libs.kotlinx.metadata.jvm)
     implementation(libs.androidx.hilt.navigation.compose)
 
     // ── Retrofit + OkHttp ─────────────────────────────────

@@ -7,5 +7,4 @@ class C : A, B {
         super<A>.saludar()
         super<B>.saludar()
         println("Y desde C")
-    }
-}
+    

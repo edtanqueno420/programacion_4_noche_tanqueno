@@ -52,10 +52,10 @@ fun VerificationScreen(
 
             EnvCard(
                 items = listOf(
-                    "Kotlin" to "2.0.21",
+                    "Kotlin" to "2.2.21",
                     "Compose BOM" to "2024.10.01",
                     "Material 3" to "✓",
-                    "Hilt" to "2.52",
+                    "Hilt" to "2.59.2",
                     "Retrofit" to "2.11.0",
                     "API URL" to BuildConfig.API_BASE_URL,
                 ),

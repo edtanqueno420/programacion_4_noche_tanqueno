@@ -8,6 +8,8 @@ import com.shopapp.domain.repository.AuthRepository
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.shopapp.data.remote.dto.PasswordResetConfirmDto
+import com.shopapp.data.remote.dto.PasswordResetRequestDto
 
 @Singleton
 class AuthRepositoryImpl @Inject constructor(
@@ -58,6 +60,38 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun isLoggedIn(): Boolean =
         !tokenDataStore.getAccessToken().isNullOrBlank()
+
+    override suspend fun requestReset(email: String): Result<String> =
+        runCatching {
+            val response = api.requestPasswordReset(PasswordResetRequestDto(email))
+            if (response.isSuccessful) {
+                response.body()?.detail ?: "Solicitud enviada"
+            } else {
+                error(response.errorBody()?.string() ?: "Error ${response.code()}")
+            }
+        }
+
+    override suspend fun confirmReset(
+        uid:          String,
+        token:        String,
+        newPassword:  String,
+        newPassword2: String,
+    ): Result<String> =
+        runCatching {
+            val response = api.confirmPasswordReset(
+                PasswordResetConfirmDto(
+                    uid          = uid,
+                    token        = token,
+                    newPassword  = newPassword,
+                    newPassword2 = newPassword2,
+                )
+            )
+            if (response.isSuccessful) {
+                response.body()?.detail ?: "Contraseña actualizada"
+            } else {
+                error(response.errorBody()?.string() ?: "Error ${response.code()}")
+            }
+        }
 
     // Extrae el mensaje de error legible del JSON de Django
     private fun parseErrorMessage(body: String, code: Int): String {

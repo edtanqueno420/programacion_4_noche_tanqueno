@@ -17,4 +17,10 @@ interface UserRepository {
     suspend fun deleteUser(id: Int): Result<Unit>
     suspend fun toggleActive(id: Int): Result<Boolean>
     suspend fun getStats(): Result<Map<String, Int>>
+    // ── Notificaciones de staff ───────────────────────────────────────────────
+    suspend fun sendNotification(
+        subject: String,
+        message: String,
+        userId:  Int? = null,
+    ): Result<NotificationResult>
 }

@@ -5,12 +5,16 @@ plugins {
 
 android {
     namespace = "com.ute.techdash"
-    compileSdk = 37
+    compileSdk {
+        version = release(36) {
+            minorApiLevel = 1
+        }
+    }
 
     defaultConfig {
         applicationId = "com.ute.techdash"
         minSdk = 24
-        targetSdk = 37
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
@@ -51,6 +55,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     // Material Icons (necesario para Icons.Default.CameraAlt, Icons.Default.NoPhotography, etc.)
     implementation("androidx.compose.material:material-icons-extended")
+
     // CameraX
     val cameraxVersion = "1.4.1"
     implementation("androidx.camera:camera-core:$cameraxVersion")
@@ -67,4 +72,12 @@ dependencies {
     // Coil para mostrar imágenes
     implementation("io.coil-kt:coil-compose:2.7.0")
 
+    // build.gradle.kts
+    dependencies {
+        // Ubicación
+        implementation("com.google.android.gms:play-services-location:21.3.0")
+
+        // Google Maps Compose (para visualizar la ubicación)
+        implementation("com.google.maps.android:maps-compose:6.2.0")
+    }
 }

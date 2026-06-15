@@ -1,6 +1,8 @@
 package com.shopapp.data.remote.api
 
-
+import com.shopapp.data.remote.dto.MessageDto
+import com.shopapp.data.remote.dto.PasswordResetConfirmDto
+import com.shopapp.data.remote.dto.PasswordResetRequestDto
 import com.shopapp.data.remote.dto.*
 import retrofit2.Response
 import retrofit2.http.Body
@@ -18,4 +20,19 @@ interface AuthApi {
 
     @POST("auth/logout/")
     suspend fun logout(@Body body: LogoutRequest): Response<Unit>
+
+    // ── Recuperación de contraseña ───────────────────────────────────────────
+
+    /** Backend: POST /api/auth/password-reset/ — no requiere autenticación */
+    @POST("auth/password-reset/")
+    suspend fun requestPasswordReset(
+        @Body body: PasswordResetRequestDto,
+    ): Response<MessageDto>
+
+    /** Backend: POST /api/auth/password-reset/confirm/ */
+    @POST("auth/password-reset/confirm/")
+    suspend fun confirmPasswordReset(
+        @Body body: PasswordResetConfirmDto,
+    ): Response<MessageDto>
+
 }

@@ -4,6 +4,10 @@ package com.shopapp.data.remote.api
 import com.shopapp.data.remote.dto.*
 import retrofit2.Response
 import retrofit2.http.*
+import com.shopapp.data.remote.dto.NotificationResultDto
+import com.shopapp.data.remote.dto.SendNotificationDto
+import retrofit2.http.Body
+import retrofit2.http.POST
 
 interface UserApi {
     @GET("users/")
@@ -37,4 +41,9 @@ interface UserApi {
 
     @GET("users/stats/")
     suspend fun getStats(): Response<UserStatsDto>
+
+    @POST("emails/send/")
+    suspend fun sendNotification(
+        @Body body: SendNotificationDto,
+    ): Response<NotificationResultDto>
 }

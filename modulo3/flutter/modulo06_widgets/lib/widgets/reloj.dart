@@ -9,9 +9,11 @@ class Reloj extends StatefulWidget {
 }
 
 class _RelojState extends State<Reloj> {
-  late Timer _timer;      // late — se asigna en initState, antes no existe
-  int  _segundos = 0;
-  bool _pausado  = false;
+  Timer? _timer;          // ahora nullable para practicar null safety
+  int _segundos = 0;
+  bool _pausado = false;
+  int _vueltas = 0;
+  final List<int> _tiemposVuelta = [];
 
   @override
   void initState() {
@@ -20,7 +22,7 @@ class _RelojState extends State<Reloj> {
   }
 
   void _iniciarTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
       if (!mounted) return;   // ← protege setState en callbacks
       setState(() => _segundos++);
     });
@@ -30,7 +32,7 @@ class _RelojState extends State<Reloj> {
     setState(() {
       _pausado = !_pausado;
       if (_pausado) {
-        _timer.cancel();      // pausa: cancela el timer actual
+        _timer?.cancel();      // pausa: cancela el timer actual si existe
       } else {
         _iniciarTimer();      // reanuda: crea un timer nuevo
       }
@@ -39,7 +41,8 @@ class _RelojState extends State<Reloj> {
 
   @override
   void dispose() {
-    _timer.cancel();          // ← SIEMPRE liberar en dispose
+    // Comentando el cancel aquí provoca un warning de fuga de memoria cuando el widget se desmonta.
+    _timer?.cancel();          // ← SIEMPRE liberar en dispose si el timer existe
     super.dispose();          // ← siempre al final
   }
 
@@ -52,6 +55,7 @@ class _RelojState extends State<Reloj> {
 
   // Color cambia según el tiempo transcurrido
   Color get _colorTiempo {
+    if (_segundos > 120) return Colors.deepPurple;
     if (_segundos > 60) return Colors.red;
     if (_segundos > 30) return Colors.orange;
     return Colors.green;
@@ -65,10 +69,10 @@ class _RelojState extends State<Reloj> {
         Text(
           _formato,
           style: TextStyle(
-            fontSize:   40,
+            fontSize: 40,
             fontFamily: 'monospace',
             fontWeight: FontWeight.bold,
-            color:      _colorTiempo,         // cambia automáticamente con el tiempo
+            color: _colorTiempo, // cambia automáticamente con el tiempo
           ),
         ),
         const SizedBox(height: 16),
@@ -77,18 +81,34 @@ class _RelojState extends State<Reloj> {
           children: [
             FilledButton.icon(
               onPressed: _togglePausa,
-              icon:  Icon(_pausado ? Icons.play_arrow : Icons.pause),
+              icon: Icon(_pausado ? Icons.play_arrow : Icons.pause),
               label: Text(_pausado ? 'Reanudar' : 'Pausar'),
             ),
             const SizedBox(width: 8),
-            TextButton(
+            FilledButton.icon(
               onPressed: () => setState(() {
-                _timer.cancel();
+                _timer?.cancel();
                 _segundos = 0;
-                _pausado  = false;
+                _pausado = false;
                 _iniciarTimer();
+                _vueltas = 0;
+                _tiemposVuelta.clear();
               }),
-              child: const Text('Reiniciar'),
+              icon: const Icon(Icons.restart_alt),
+              label: const Text('Reiniciar'),
+            ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: _pausado
+                  ? null
+                  : () {
+                      setState(() {
+                        _vueltas++;
+                        _tiemposVuelta.add(_segundos);
+                      });
+                    },
+              icon: const Icon(Icons.flag),
+              label: const Text('Vuelta'),
             ),
           ],
         ),
@@ -97,6 +117,13 @@ class _RelojState extends State<Reloj> {
           _pausado ? 'Pausado' : 'Corriendo',
           style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
         ),
+        if (_tiemposVuelta.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Última vuelta: ${_tiemposVuelta.last} seg',
+            style: const TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+        ],
       ],
     );
   }

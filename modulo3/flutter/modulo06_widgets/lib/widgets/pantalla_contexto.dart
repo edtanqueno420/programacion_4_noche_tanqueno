@@ -13,12 +13,14 @@ class PantallaContexto extends StatelessWidget {
     final tamanio   = MediaQuery.sizeOf(context);
     final esMovil   = tamanio.width < 600;
     final esRetrato = MediaQuery.orientationOf(context) == Orientation.portrait;
+    final paddingTop = MediaQuery.paddingOf(context).top;
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
 
     return Scaffold(
       backgroundColor: colores.surface,
       appBar: AppBar(
-        backgroundColor: colores.primaryContainer,
-        foregroundColor: colores.onPrimaryContainer,
+        backgroundColor: colores.secondaryContainer,
+        foregroundColor: colores.onSecondaryContainer,
         title: Text(
           'Pantalla ${esMovil ? "móvil" : "tablet"} · ${esRetrato ? "retrato" : "paisaje"}',
           style: tema.textTheme.titleMedium,
@@ -31,8 +33,9 @@ class PantallaContexto extends StatelessWidget {
           _Seccion(
             titulo: 'Pantalla',
             items: [
-              'Ancho:        ${tamanio.width.toStringAsFixed(0)} px',
-              'Alto:         ${tamanio.height.toStringAsFixed(0)} px',
+              'Ancho:        ${pixelRatio.toStringAsFixed(1)}',
+              'Orientación:  ${MediaQuery.orientationOf(context).name}',
+              'Padding Top (notch/statusbar): ${paddingTop.toStringAsFixed(1)} px
               'Pixel ratio:  ${MediaQuery.devicePixelRatioOf(context).toStringAsFixed(1)}',
               'Orientación:  ${MediaQuery.orientationOf(context).name}',
             ],
@@ -60,6 +63,23 @@ class PantallaContexto extends StatelessWidget {
           Text('titleLarge',    style: tema.textTheme.titleLarge),
           Text('bodyLarge',     style: tema.textTheme.bodyLarge),
           Text('bodyMedium',    style: tema.textTheme.bodyMedium),
+          const SizedBox(height: 16),
+
+          // ── Acceso a Scaffold para mostrar SnackBar ────────────
+          _Seccion(titulo: 'Scaffold & Context', items: []),
+          ElevatedButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: const Text('¡SnackBar desde el contexto!'),
+                  backgroundColor: colores.primary,
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
+            icon: const Icon(Icons.info),
+            label: const Text('Mostrar SnackBar'),
+          ),
           Text('labelSmall',    style: tema.textTheme.labelSmall),
         ],
       ),

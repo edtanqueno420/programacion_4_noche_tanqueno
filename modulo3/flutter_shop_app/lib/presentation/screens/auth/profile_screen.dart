@@ -38,6 +38,17 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 20),
+              if (auth.user?.isStaff == true) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.go('/admin'),
+                    icon: const Icon(Icons.admin_panel_settings_outlined),
+                    label: const Text('Panel Admin'),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               ListTile(
                 leading: const Icon(Icons.lock_outline_rounded),
                 title: const Text('Cerrar sesión'),

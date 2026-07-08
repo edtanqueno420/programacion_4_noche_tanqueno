@@ -17,6 +17,7 @@ import '../screens/orders/order_detail_screen.dart';
 import '../screens/admin/dashboard_screen.dart';
 import '../widgets/admin_shell.dart';
 import 'public_shell.dart';
+import '../screens/admin/categories_admin_screen.dart';
 
 // Pantalla temporal para los placeholders
 class _SplashScreen extends StatelessWidget {
@@ -123,7 +124,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => AdminShell(
           title: 'Categorías',
           currentRoute: state.matchedLocation,
-          child: const _AdminPlaceholder('Categorías — M8'),
+          child:        const CategoriesAdminScreen(),
         ),
       ),
       GoRoute(

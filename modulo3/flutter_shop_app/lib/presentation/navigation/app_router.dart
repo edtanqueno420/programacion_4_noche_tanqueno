@@ -10,9 +10,10 @@ import '../screens/auth/register_screen.dart';
 import '../screens/catalog/home_screen.dart';
 import '../screens/catalog/catalog_screen.dart';
 import '../screens/catalog/cart_screen.dart';
-import '../screens/catalog/orders_screen.dart';
-import '../screens/catalog/profile_screen.dart';
+import '../screens/orders/orders_screen.dart';
+import '../screens/auth/profile_screen.dart';
 import '../screens/catalog/product_detail_screen.dart';
+import '../screens/orders/order_detail_screen.dart';
 import 'public_shell.dart';
 
 // Pantalla temporal para los placeholders
@@ -115,6 +116,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) {
           final id = int.parse(state.pathParameters['id']!);
           return ProductDetailScreen(productId: id);
+        },
+      ),
+      GoRoute(
+        path: '/orders/:id',
+        builder: (_, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return OrderDetailScreen(id: id);
         },
       ),
       GoRoute(

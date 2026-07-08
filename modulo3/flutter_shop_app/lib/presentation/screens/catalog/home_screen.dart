@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/catalog_provider.dart';
 import '../../widgets/product_card.dart';
-import 'catalog_screen.dart';
+import 'product_detail_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -32,12 +32,12 @@ class HomeScreen extends ConsumerWidget {
                 children: [
                   ChoiceChip(
                     label: const Text('Todos'),
-                    selected: catalog.selectedCategory == null,
+                    selected: catalog.categoryId == null,
                     onSelected: (_) => ref.read(catalogProvider.notifier).setCategory(null),
                   ),
                   ...categories.map((c) => ChoiceChip(
                     label: Text(c.name),
-                    selected: catalog.selectedCategory == c.id,
+                    selected: catalog.categoryId == c.id,
                     onSelected: (_) => ref.read(catalogProvider.notifier).setCategory(c.id),
                   ))
                 ],
@@ -67,7 +67,7 @@ class HomeScreen extends ConsumerWidget {
                   product: catalog.products[index],
                   onTap: () {
                     Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => ProductDetailScreen(product: catalog.products[index]),
+                      builder: (_) => ProductDetailScreen(productId: catalog.products[index].id),
                     ));
                   },
                 ),

@@ -1,138 +1,183 @@
 // lib/presentation/screens/catalog/catalog_screen.dart
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide SearchBar;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../domain/model/product.dart';
-import '../../providers/cart_provider.dart';
+import 'package:go_router/go_router.dart';
+import '../../../theme/app_colors.dart';
 import '../../providers/catalog_provider.dart';
+import '../../widgets/filters_sheet.dart';
 import '../../widgets/product_card.dart';
+import '../../widgets/search_bar.dart' as custom;
 
-class ProductDetailScreen extends StatelessWidget {
-  const ProductDetailScreen({super.key, required this.product});
-  final Product product;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(product.name)),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(product.name, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(product.description.isEmpty ? 'Sin descripción' : product.description),
-            const SizedBox(height: 16),
-            Text('Precio: S/ ${product.price.toStringAsFixed(2)}', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text('Stock: ${product.stock}', style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class CatalogScreen extends ConsumerWidget {
+class CatalogScreen extends ConsumerStatefulWidget {
   const CatalogScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final catalog = ref.watch(catalogProvider);
-    final notifier = ref.read(catalogProvider.notifier);
-    final categoriesAsync = ref.watch(categoriesProvider);
+  ConsumerState<CatalogScreen> createState() => _CatalogScreenState();
+}
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Catálogo')),
-      body: RefreshIndicator(
-        onRefresh: () async => notifier.refresh(),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
+class _CatalogScreenState extends ConsumerState<CatalogScreen> {
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+        ref.read(catalogProvider.notifier).loadMore();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openFilters() async {
+    final state = ref.read(catalogProvider);
+    final activeFilters = ProductFilters(
+      categoryId: state.categoryId,
+      ordering: state.ordering,
+      minPrice: state.minPrice,
+      maxPrice: state.maxPrice,
+    );
+    final result = await showFiltersSheet(
+      context: context,
+      activeFilters: activeFilters,
+      categories: state.categories,
+    );
+    if (result != null && mounted) {
+      ref.read(catalogProvider.notifier).setCategory(result.categoryId);
+      ref.read(catalogProvider.notifier).setOrdering(result.ordering);
+      ref.read(catalogProvider.notifier).setPriceRange(result.minPrice, result.maxPrice);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(catalogProvider);
+    final numFilters = _countActiveFilters(state);
+
+    if (state.isLoading && state.products.isEmpty) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.accent));
+    }
+    if (state.error != null && state.products.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              decoration: const InputDecoration(
-                hintText: 'Buscar productos',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: notifier.setSearch,
-            ),
+            const Text('❌', style: TextStyle(fontSize: 40)),
             const SizedBox(height: 12),
-            categoriesAsync.when(
-              data: (categories) => Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ChoiceChip(label: const Text('Todos'), selected: catalog.selectedCategory == null, onSelected: (_) => notifier.setCategory(null)),
-                  ...categories.map((c) => ChoiceChip(label: Text(c.name), selected: catalog.selectedCategory == c.id, onSelected: (_) => notifier.setCategory(c.id))),
-                ],
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
+            Text(state.error!, style: const TextStyle(color: AppColors.error)),
             const SizedBox(height: 16),
-            if (catalog.isLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (catalog.error != null)
-              Text(catalog.error!, style: const TextStyle(color: Colors.red))
-            else if (catalog.products.isEmpty)
-              const Center(child: Text('No hay productos'))
-            else
-              GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: catalog.products.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  childAspectRatio: 0.82,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
-                ),
-                itemBuilder: (_, index) => ProductCard(
-                  product: catalog.products[index],
-                  onTap: () => _showDetail(context, ref, catalog.products[index]),
-                ),
-              ),
-            if (catalog.hasMore)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: ElevatedButton(onPressed: notifier.loadMore, child: const Text('Cargar más')),
-              ),
+            ElevatedButton(onPressed: () => ref.read(catalogProvider.notifier).refresh(), child: const Text('Retry')),
           ],
         ),
+      );
+    }
+
+    return RefreshIndicator(
+      color: AppColors.accent,
+      onRefresh: ref.read(catalogProvider.notifier).refresh,
+      child: CustomScrollView(
+        controller: _scrollController,
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: custom.SearchBar(
+                      initialValue: state.search,
+                      onChanged: (q) => ref.read(catalogProvider.notifier).setSearch(q),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Stack(
+                    children: [
+                      IconButton.filled(
+                        style: IconButton.styleFrom(
+                          backgroundColor: numFilters > 0 ? AppColors.accent : AppColors.surface,
+                          foregroundColor: numFilters > 0 ? AppColors.onAccent : AppColors.textPrimary,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: AppColors.border)),
+                        ),
+                        icon: const Icon(Icons.tune),
+                        onPressed: _openFilters,
+                      ),
+                      if (numFilters > 0)
+                        Positioned(
+                          top: 4,
+                          right: 4,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: const BoxDecoration(color: AppColors.error, shape: BoxShape.circle),
+                            child: Center(child: Text('$numFilters', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700))),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text('${state.total} result${state.total != 1 ? 's' : ''}', style: const TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            ),
+          ),
+          if (state.products.isEmpty && !state.isLoading)
+            const SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('📦', style: TextStyle(fontSize: 52)),
+                    SizedBox(height: 16),
+                    Text('No results', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 0.72,
+                ),
+                delegate: SliverChildBuilderDelegate((_, i) {
+                  final p = state.products[i];
+                  return ProductCard(product: p, onTap: () => context.push('/catalog/${p.id}'));
+                }, childCount: state.products.length),
+              ),
+            ),
+          if (state.isLoadingMore)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator(color: AppColors.accent)),
+              ),
+            ),
+          const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        ],
       ),
     );
   }
 
-  void _showDetail(BuildContext context, WidgetRef ref, Product product) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(product.name, style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(product.description.isEmpty ? 'Sin descripción' : product.description, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 12),
-            Text('S/ ${product.price.toStringAsFixed(2)}', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: () {
-                ref.read(cartProvider.notifier).addItem(product);
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Producto agregado al carrito')));
-              },
-              icon: const Icon(Icons.add_shopping_cart),
-              label: const Text('Agregar al carrito'),
-            ),
-          ],
-        ),
-      ),
-    );
+  int _countActiveFilters(CatalogState state) {
+    int count = 0;
+    if (state.categoryId != null) count++;
+    if (state.ordering != null) count++;
+    if (state.minPrice != null) count++;
+    if (state.maxPrice != null) count++;
+    return count;
   }
 }

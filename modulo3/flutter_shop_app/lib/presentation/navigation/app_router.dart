@@ -12,6 +12,7 @@ import '../screens/catalog/catalog_screen.dart';
 import '../screens/catalog/cart_screen.dart';
 import '../screens/catalog/orders_screen.dart';
 import '../screens/catalog/profile_screen.dart';
+import '../screens/catalog/product_detail_screen.dart';
 import 'public_shell.dart';
 
 // Pantalla temporal para los placeholders
@@ -110,8 +111,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(
-        path:    '/product/:id',
-        builder: (_, __) => const _PlaceholderScreen('Detalle — M5'),
+        path: '/catalog/:id',
+        builder: (_, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return ProductDetailScreen(productId: id);
+        },
       ),
       GoRoute(
         path:    '/admin',

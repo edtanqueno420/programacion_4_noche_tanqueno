@@ -7,6 +7,12 @@ import '../../domain/model/auth_state.dart';
 import '../providers/auth_provider.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/catalog/home_screen.dart';
+import '../screens/catalog/catalog_screen.dart';
+import '../screens/catalog/cart_screen.dart';
+import '../screens/catalog/orders_screen.dart';
+import '../screens/catalog/profile_screen.dart';
+import 'public_shell.dart';
 
 // Pantalla temporal para los placeholders
 class _SplashScreen extends StatelessWidget {
@@ -33,7 +39,9 @@ class _PlaceholderScreen extends ConsumerWidget {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await ref.read(authProvider.notifier).logout();
-              context.go('/login');
+              if (context.mounted) {
+                context.go('/login');
+              }
             },
           ),
         ],
@@ -81,25 +89,29 @@ final routerProvider = Provider<GoRouter>((ref) {
         path:    '/register',
         builder: (_, __) => const RegisterScreen(),
       ),
-      GoRoute(
-        path:    '/',
-        builder: (_, __) => const _PlaceholderScreen('Home — M5'),
-      ),
-      GoRoute(
-        path:    '/catalog',
-        builder: (_, __) => const _PlaceholderScreen('Catálogo — M5'),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) => PublicShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/catalog', builder: (_, __) => const CatalogScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/cart', builder: (_, __) => const CartScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/orders', builder: (_, __) => const OrdersScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+          ]),
+        ],
       ),
       GoRoute(
         path:    '/product/:id',
         builder: (_, __) => const _PlaceholderScreen('Detalle — M5'),
-      ),
-      GoRoute(
-        path:    '/orders',
-        builder: (_, __) => const _PlaceholderScreen('Mis pedidos — M7'),
-      ),
-      GoRoute(
-        path:    '/profile',
-        builder: (_, __) => const _PlaceholderScreen('Perfil — M7'),
       ),
       GoRoute(
         path:    '/admin',

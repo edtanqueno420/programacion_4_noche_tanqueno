@@ -1,0 +1,8 @@
+!Bienvenido a CPshopapi - Control de Produccion, {{ username }}!
+
+Tu cuenta de operario ha sido creada exitosamente con el correo {{ email }}.
+
+Ya puedes acceder al sistema de control de produccion y gestionar ordenes.
+
+---
+Este es un correo automatico, por favor no respondas.

@@ -22,7 +22,7 @@ class Lote {
         esPrioritario = true;
 
   factory Lote.desdePedido(String pedido) {
-    final partes = pedido.split('-');
+    final partes = pedido.split('|');
     return Lote(
       codigoProducto: partes[0],
       cantidad: int.parse(partes[1]),
@@ -40,7 +40,7 @@ void main() {
   final l1 = Lote(codigoProducto: 'FRE-E4', cantidad: 50, linea: 'L02');
   final l2 = Lote.standar();
   final l3 = Lote.urgente(codigoProducto: 'RECT-P1', cantidad: 20);
-  final l4 = Lote.desdePedido('TOR-M10-200-L03');
+  final l4 = Lote.desdePedido('TOR-M10|200|L03');
 
   print(l1);
   print(l2);

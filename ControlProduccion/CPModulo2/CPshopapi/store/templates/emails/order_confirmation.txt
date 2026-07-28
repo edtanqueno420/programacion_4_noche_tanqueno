@@ -1,0 +1,13 @@
+Confirmacion de orden de produccion #{{ order_id }}
+
+Hola {{ username }}, tu orden de produccion ha sido registrada correctamente.
+
+Piezas:
+{% for item in items %}- {{ item.pieza_name }}: {{ item.cantidad }} x ${{ item.costo_unitario }} = ${{ item.subtotal }}
+{% endfor %}
+Total: ${{ total }}
+Estado: {{ status }}
+
+Orden creada el {{ created_at }}.
+---
+Este es un correo automatico del sistema de produccion.

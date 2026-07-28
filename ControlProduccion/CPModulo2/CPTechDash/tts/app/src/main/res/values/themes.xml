@@ -1,0 +1,4 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.CPNotificacionesPlanta" parent="Theme.Material3.DayNight.NoActionBar" />
+    <style name="Theme.CPNotificacionesPlanta" parent="Base.Theme.CPNotificacionesPlanta" />
+</resources>

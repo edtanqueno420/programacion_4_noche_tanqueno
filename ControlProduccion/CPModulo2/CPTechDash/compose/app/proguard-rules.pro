@@ -1,0 +1,3 @@
+-dontwarn javax.annotation.**
+-keep class com.cp.compose.model.** { *; }
+-keep class com.cp.compose.viewmodel.** { *; }
